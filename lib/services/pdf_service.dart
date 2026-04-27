@@ -38,10 +38,23 @@ class PdfService {
       ),
     );
 
-    final dir = await getApplicationDocumentsDirectory();
+    // Save to Downloads folder
+    Directory downloadsDir;
+    if (Platform.isAndroid) {
+      downloadsDir = Directory('/storage/emulated/0/Download');
+    } else {
+      final dir = await getDownloadsDirectory();
+      downloadsDir = dir!;
+    }
+    
+    // Ensure directory exists
+    if (!downloadsDir.existsSync()) {
+      downloadsDir.createSync(recursive: true);
+    }
+    
     final fileName =
         'invoice_${invoice.invoiceNumber.isNotEmpty ? invoice.invoiceNumber : DateTime.now().millisecondsSinceEpoch}.pdf';
-    final file = File('${dir.path}/$fileName');
+    final file = File('${downloadsDir.path}/$fileName');
     await file.writeAsBytes(await pdf.save());
     return file;
   }
@@ -235,6 +248,42 @@ class PdfService {
 
   // ── Summary box (bottom right) ───────────────────────────────────────────
   static pw.Widget _buildSummary(Invoice invoice) {
+    final rows = <pw.Widget>[
+      _summaryRow(
+        'Subtotal:',
+        invoice.subtotal.toStringAsFixed(0),
+        bold: false,
+      ),
+    ];
+    
+    // Add discount row if applicable
+    if (invoice.discountAmount > 0) {
+      rows.add(pw.Divider(height: 0, thickness: 0.5, color: _borderGrey));
+      rows.add(_summaryRow(
+        'Discount:',
+        '-${invoice.discountAmount.toStringAsFixed(0)}',
+        bold: false,
+      ));
+    }
+    
+    // Add GST row if applicable
+    if (invoice.gstAmount > 0) {
+      rows.add(pw.Divider(height: 0, thickness: 0.5, color: _borderGrey));
+      rows.add(_summaryRow(
+        'GST:',
+        invoice.gstAmount.toStringAsFixed(0),
+        bold: false,
+      ));
+    }
+    
+    rows.add(pw.Divider(height: 0, thickness: 0.5, color: _borderGrey));
+    rows.add(_summaryRow(
+      'Amount Due:',
+      invoice.grandTotal.toStringAsFixed(0),
+      bold: true,
+      darkBg: true,
+    ));
+    
     return pw.Padding(
       padding: const pw.EdgeInsets.only(right: 32),
       child: pw.Align(
@@ -245,28 +294,7 @@ class PdfService {
             border: pw.Border.all(color: _borderGrey, width: 0.8),
           ),
           child: pw.Column(
-            children: [
-              _summaryRow(
-                'Subtotal:',
-                invoice.subtotal.toStringAsFixed(0),
-                bold: false,
-              ),
-              pw.Divider(height: 0, thickness: 0.5, color: _borderGrey),
-              _summaryRow(
-                'Tax:',
-                invoice.taxAmount > 0
-                    ? invoice.taxAmount.toStringAsFixed(0)
-                    : '',
-                bold: false,
-              ),
-              pw.Divider(height: 0, thickness: 0.5, color: _borderGrey),
-              _summaryRow(
-                'Amount Due:',
-                invoice.grandTotal.toStringAsFixed(0),
-                bold: true,
-                darkBg: true,
-              ),
-            ],
+            children: rows,
           ),
         ),
       ),

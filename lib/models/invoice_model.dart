@@ -46,7 +46,8 @@ class Invoice {
   String billToPhone;
 
   List<InvoiceItem> items;
-  double taxAmount;
+  double discountAmount;
+  double gstAmount;
 
   Invoice({
     this.invoiceNumber = '',
@@ -61,10 +62,11 @@ class Invoice {
     this.billToAddress = '',
     this.billToPhone = '',
     List<InvoiceItem>? items,
-    this.taxAmount = 0,
+    this.discountAmount = 0,
+    this.gstAmount = 0,
   }) : items = items ?? [];
 
   double get subtotal => items.fold(0.0, (sum, item) => sum + item.total);
 
-  double get grandTotal => subtotal + taxAmount;
+  double get grandTotal => subtotal - discountAmount + gstAmount;
 }

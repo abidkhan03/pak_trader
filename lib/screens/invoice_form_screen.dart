@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/invoice_model.dart';
 import '../services/pdf_service.dart';
@@ -35,8 +34,9 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
   final _billToAddressCtrl = TextEditingController();
   final _billToPhoneCtrl = TextEditingController();
 
-  // Tax controller
-  final _taxCtrl = TextEditingController(text: '0');
+  // Discount and GST controllers
+  final _discountCtrl = TextEditingController(text: '0');
+  final _gstCtrl = TextEditingController(text: '0');
 
   bool _isGenerating = false;
   bool _isSaving = false;
@@ -85,7 +85,8 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
     _billToNameCtrl.text = invoice.billToName;
     _billToAddressCtrl.text = invoice.billToAddress;
     _billToPhoneCtrl.text = invoice.billToPhone;
-    _taxCtrl.text = invoice.taxAmount.toStringAsFixed(0);
+    _discountCtrl.text = invoice.discountAmount.toStringAsFixed(0);
+    _gstCtrl.text = invoice.gstAmount.toStringAsFixed(0);
     _items = List.from(invoice.items);
   }
 
@@ -109,7 +110,8 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
     _billToNameCtrl.dispose();
     _billToAddressCtrl.dispose();
     _billToPhoneCtrl.dispose();
-    _taxCtrl.dispose();
+    _discountCtrl.dispose();
+    _gstCtrl.dispose();
     _saveNameCtrl.dispose();
     super.dispose();
   }
@@ -214,13 +216,15 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
       billToAddress: _billToAddressCtrl.text,
       billToPhone: _billToPhoneCtrl.text,
       items: List.from(_items),
-      taxAmount: double.tryParse(_taxCtrl.text) ?? 0,
+      discountAmount: double.tryParse(_discountCtrl.text) ?? 0,
+      gstAmount: double.tryParse(_gstCtrl.text) ?? 0,
     );
   }
 
   double get _subtotal => _items.fold(0.0, (s, i) => s + i.total);
-  double get _tax => double.tryParse(_taxCtrl.text) ?? 0;
-  double get _grandTotal => _subtotal + _tax;
+  double get _discount => double.tryParse(_discountCtrl.text) ?? 0;
+  double get _gst => double.tryParse(_gstCtrl.text) ?? 0;
+  double get _grandTotal => _subtotal - _discount + _gst;
 
   Future<File?> _generate() async {
     if (!(_formKey.currentState?.validate() ?? false)) return null;
@@ -231,14 +235,6 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
 
     setState(() => _isGenerating = true);
     try {
-      // Request storage permission on older Android
-      if (Platform.isAndroid) {
-        final status = await Permission.storage.request();
-        if (status.isDenied) {
-          _showSnack('Storage permission denied.', error: true);
-          return null;
-        }
-      }
       final file = await PdfService.generateInvoice(_buildInvoice());
       return file;
     } catch (e) {
@@ -618,7 +614,6 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
 
   Widget _buildSummaryCard() {
     final subtotal = _subtotal;
-    final tax = _tax;
     final grand = _grandTotal;
 
     return Card(
@@ -650,11 +645,36 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
               children: [
                 const SizedBox(
                   width: 100,
-                  child: Text('Tax', style: TextStyle(fontSize: 14)),
+                  child: Text('Discount', style: TextStyle(fontSize: 14)),
                 ),
                 Expanded(
                   child: TextFormField(
-                    controller: _taxCtrl,
+                    controller: _discountCtrl,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    decoration: InputDecoration(
+                      isDense: true,
+                      hintText: '0',
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 10),
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const SizedBox(
+                  width: 100,
+                  child: Text('GST', style: TextStyle(fontSize: 14)),
+                ),
+                Expanded(
+                  child: TextFormField(
+                    controller: _gstCtrl,
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     decoration: InputDecoration(

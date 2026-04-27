@@ -181,7 +181,8 @@ class DatabaseService {
       'billToName': invoice.billToName,
       'billToAddress': invoice.billToAddress,
       'billToPhone': invoice.billToPhone,
-      'taxAmount': invoice.taxAmount,
+      'discountAmount': invoice.discountAmount,
+      'gstAmount': invoice.gstAmount,
       'items': invoice.items.map((item) => {
         'name': item.name,
         'description': item.description,
@@ -205,7 +206,8 @@ class DatabaseService {
       billToName: json['billToName'] ?? '',
       billToAddress: json['billToAddress'] ?? '',
       billToPhone: json['billToPhone'] ?? '',
-      taxAmount: (json['taxAmount'] ?? 0).toDouble(),
+      discountAmount: (json['discountAmount'] ?? json['taxAmount'] ?? 0).toDouble(),
+      gstAmount: (json['gstAmount'] ?? 0).toDouble(),
     );
 
     final items = json['items'] as List<dynamic>?;

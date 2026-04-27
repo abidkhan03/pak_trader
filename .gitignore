@@ -16,3 +16,4 @@ android/gradlew
 android/gradlew.bat
 *.keystore
 !debug.keystore
+.DS_Store
