@@ -11,7 +11,6 @@ class PdfService {
   static const PdfColor _white = PdfColor.fromInt(0xFFFFFFFF);
   static const PdfColor _lightGrey = PdfColor.fromInt(0xFFF5F5F5);
   static const PdfColor _borderGrey = PdfColor.fromInt(0xFFCCCCCC);
-  static const PdfColor _cyanLink = PdfColor.fromInt(0xFF00ACC1);
 
   /// Generates the invoice PDF and saves it to the temp cache.
   /// Returns the saved [File]. Caller should share/copy it from there.
@@ -103,11 +102,11 @@ class PdfService {
                 ),
                 pw.Text(
                   invoice.billFromEmail,
-                  style: pw.TextStyle(fontSize: 11, color: _cyanLink),
+                  style: pw.TextStyle(fontSize: 11, color: _white),
                 ),
                 pw.Text(
                   invoice.billFromPhone,
-                  style: pw.TextStyle(fontSize: 11, color: _cyanLink),
+                  style: pw.TextStyle(fontSize: 11, color: _white),
                 ),
                 if (invoice.billToName.isNotEmpty) ...[
                   pw.SizedBox(height: 16),
@@ -132,7 +131,7 @@ class PdfService {
                   if (invoice.billToPhone.isNotEmpty)
                     pw.Text(
                       invoice.billToPhone,
-                      style: pw.TextStyle(fontSize: 11, color: _cyanLink),
+                      style: pw.TextStyle(fontSize: 11, color: _white),
                     ),
                 ],
               ],
