@@ -248,7 +248,15 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
   Future<void> _onGeneratePdf() async {
     final file = await _generate();
     if (file == null) return;
-    _showSnack('PDF saved: ${file.path}');
+    // Open Android share sheet — user taps "Save to Downloads" or any app
+    try {
+      await Share.shareXFiles(
+        [XFile(file.path, mimeType: 'application/pdf')],
+        subject: 'Invoice #${_invoiceNumCtrl.text}',
+      );
+    } catch (e) {
+      _showSnack('Error opening save dialog: $e', error: true);
+    }
   }
 
   Future<void> _onShareWhatsApp() async {
@@ -257,7 +265,7 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
 
     try {
       await Share.shareXFiles(
-        [XFile(file.path)],
+        [XFile(file.path, mimeType: 'application/pdf')],
         text: 'Invoice #${_invoiceNumCtrl.text}',
         subject: 'Invoice from ${_billNameCtrl.text}',
       );

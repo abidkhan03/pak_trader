@@ -13,8 +13,8 @@ class PdfService {
   static const PdfColor _borderGrey = PdfColor.fromInt(0xFFCCCCCC);
   static const PdfColor _cyanLink = PdfColor.fromInt(0xFF00ACC1);
 
-  /// Generates the invoice PDF and saves it to app documents directory.
-  /// Returns the saved [File].
+  /// Generates the invoice PDF and saves it to the temp cache.
+  /// Returns the saved [File]. Caller should share/copy it from there.
   static Future<File> generateInvoice(Invoice invoice) async {
     final pdf = pw.Document();
 
@@ -38,23 +38,12 @@ class PdfService {
       ),
     );
 
-    // Save to Downloads folder
-    Directory downloadsDir;
-    if (Platform.isAndroid) {
-      downloadsDir = Directory('/storage/emulated/0/Download');
-    } else {
-      final dir = await getDownloadsDirectory();
-      downloadsDir = dir!;
-    }
-    
-    // Ensure directory exists
-    if (!downloadsDir.existsSync()) {
-      downloadsDir.createSync(recursive: true);
-    }
-    
+    // Save to app cache — works on ALL Android versions, no permission needed.
+    // The caller opens the share sheet so the user can save to Downloads.
+    final cacheDir = await getTemporaryDirectory();
     final fileName =
         'invoice_${invoice.invoiceNumber.isNotEmpty ? invoice.invoiceNumber : DateTime.now().millisecondsSinceEpoch}.pdf';
-    final file = File('${downloadsDir.path}/$fileName');
+    final file = File('${cacheDir.path}/$fileName');
     await file.writeAsBytes(await pdf.save());
     return file;
   }
